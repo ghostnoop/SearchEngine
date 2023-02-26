@@ -34,7 +34,7 @@ counter=0
 for file in files:
     with open(file,'rb') as f:
         soup = BeautifulSoup(f.read(), "html.parser")
-        extract(soup.text.lower())
+        extract(soup.get_text(" ").lower())
     print(counter)
     counter+=1
 
