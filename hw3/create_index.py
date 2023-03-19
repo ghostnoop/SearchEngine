@@ -1,7 +1,7 @@
 import string
 from collections import defaultdict
 
-with open('sentences.txt', 'r', encoding='utf-8') as f:
+with open('lemmas.txt', 'r', encoding='utf-8') as f:
     sentences = f.read().strip().split('\n')
 
 index = defaultdict(list)
