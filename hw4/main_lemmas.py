@@ -17,11 +17,12 @@ def extract(text: str):
     # print([(w.text, w.pos_) for w in doc])
     texts = []
     for i in doc:
-        if i.text in ('\n','',' '):
+        if i.text in ('\n', '', ' '):
             continue
         if i.is_alpha and not i.like_num and not i.is_punct and i.text.lower() not in russian_stopwords:
             texts.append(i.text)
     return ' '.join(texts)
+
 
 def get_all_words_from_downloads():
     words_all = []
@@ -57,11 +58,15 @@ def counter(file_name):
         for i in words_all:
             if i in word:
                 counter += 1
-        counter_page = 0
+        arr = []
         for i, v in words_by_page.items():
+            counter_page = 0
+
             for word_i in word:
                 if word_i in v:
                     counter_page += 1
+            arr.append(counter_page)
+        counter_page = sum(arr) // len(arr)
 
         tf = counter / len(words_all)
         idf = (len(words_by_page) / counter_page if counter_page > 0 else 0.0)
