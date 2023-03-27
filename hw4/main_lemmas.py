@@ -66,7 +66,7 @@ def counter(file_name):
                 if word_i in v:
                     counter_page += 1
             arr.append(counter_page)
-        counter_page = sum(arr) // len(arr)
+        counter_page = max(arr)
 
         tf = counter / len(words_all)
         idf = (len(words_by_page) / counter_page if counter_page > 0 else 0.0)
