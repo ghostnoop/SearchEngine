@@ -37,10 +37,13 @@ def get_links():
     with open('urls.csv', 'r', encoding='utf-8') as f:
         data = f.read().strip().split('\n')
 
+    with open('titles.csv', 'r', encoding='utf-8') as f:
+        titles = {i + 1: j for i, j in enumerate(f.read().strip().split('\n'))}
+
     links = {}
     for index, i in enumerate(data):
         links[index + 1] = i
-    return links
+    return links, titles
 
 
 def search(line: str):
@@ -68,12 +71,13 @@ def search(line: str):
 
         print(index, links[k], k)
         index += 1
-        pages.append(links)
+        pages.append((links[k], titles[k]))
     return pages
 
 
+tokens_index, page_tf_idf = prepare()
+links, titles = get_links()
+
 if __name__ == '__main__':
-    tokens_index, page_tf_idf = prepare()
-    links = get_links()
     # 1 https://habr.com/ru/post/716708/ 1
     search('заболеваний командами')
