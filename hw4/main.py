@@ -1,6 +1,6 @@
 import math
 import os
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 from bs4 import BeautifulSoup
 import spacy
@@ -10,6 +10,7 @@ from nltk.corpus import stopwords
 nlp = spacy.load("ru_core_news_sm")
 
 russian_stopwords = stopwords.words("russian")
+PAGES = 101
 
 
 def extract(text: str):
@@ -17,25 +18,24 @@ def extract(text: str):
     # print([(w.text, w.pos_) for w in doc])
     texts = []
     for i in doc:
-        if i.text in ('\n','',' '):
+        if i.text in ('\n', '', ' '):
             continue
         if i.is_alpha and not i.like_num and not i.is_punct and i.text.lower() not in russian_stopwords:
             texts.append(i.text)
     return ' '.join(texts)
 
+
 def get_all_words_from_downloads():
-    words_all = []
     words_by_page = defaultdict(set)
 
-    for i in range(1, 101):
+    for i in range(1, PAGES):
         with open(os.path.join('..', 'downloads', f'page{i}.html'), 'rb') as f:
             soup = BeautifulSoup(f.read(), "html.parser")
             data = extract(soup.get_text(" ").lower())
             data = data.split(' ')
-            words_all.extend(data)
-            words_by_page[i] = set(data)
+            words_by_page[i] = (set(data), Counter(data), len(data))
 
-    return words_all, words_by_page
+    return words_by_page
 
 
 def counter(file_name):
@@ -44,43 +44,38 @@ def counter(file_name):
 
     words = []
 
+    words_by_page = get_all_words_from_downloads()
+
     for i in data:
         word = i.split(' ', maxsplit=1)[0]
         words.append(word)
 
-    words_all, words_by_page = get_all_words_from_downloads()
+    for page_i in range(1, PAGES):
+        word_tf_idf = {}
+        _, words_counter, size = words_by_page[page_i]
+        for word in words:
+            tf = words_counter.get(word, 0) / size
 
-    # {"word":{"tf":0,"idf":0}}
-    word_tf_idf = {}
-    for word in words:
-        counter = 0
-        for i in words_all:
-            if i == word:
-                counter += 1
-        counter_page = 0
-        for i, v in words_by_page.items():
-            if word in v:
-                counter_page += 1
+            count_by_page = 0
+            for j in words_by_page.values():
+                if word in j[0]:
+                    count_by_page += 1
 
-        if counter_page>0 or counter>0:
-            print(word)
+            idf = math.log(len(words_by_page) / max(count_by_page, 1))
 
-        tf = counter / len(words_all)
-        idf = (len(words_by_page) / counter_page if counter_page > 0 else 0.0)
-        idf = math.log(idf) if idf > 0 else 0.0
-        tf_idf = tf * idf
+            tf_idf = tf * idf
 
-        # tf = round(tf, 2)
-        # tf_idf = round(tf_idf, 2)
+            word_tf_idf[word] = dict(tf=tf, tf_idf=tf_idf)
 
-        word_tf_idf[word] = dict(tf=tf, tf_idf=tf_idf)
+        file_name_without_suffix = file_name.replace('.txt', '')
+        writer(f'{file_name_without_suffix}/tokens_{page_i}.txt', word_tf_idf)
+        print('page', page_i, 'size', PAGES)
 
-    return word_tf_idf
 
 
 def writer(file_name, word_tf_idf):
     #     <термин><пробел><idf><пробел><tf-idf><\n>
-    with open(f'hw_{file_name}', 'w', encoding='utf-8') as f:
+    with open(file_name, 'w', encoding='utf-8') as f:
         s = []
         for i, v in word_tf_idf.items():
             s.append(f'{i} {v["tf"]} {v["tf_idf"]}\n')
@@ -88,6 +83,6 @@ def writer(file_name, word_tf_idf):
 
 
 if __name__ == '__main__':
-    for i in ['tokens.txt']:
+    for i in ['tokens.txt','lemmas.txt']:
         count = counter(i)
         writer(i, count)
